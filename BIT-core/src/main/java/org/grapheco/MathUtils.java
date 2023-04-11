@@ -1,17 +1,17 @@
-import scala.Array;
+package org.grapheco;
 
 import java.util.ArrayList;
 
 public class MathUtils {
-    public static final int CHAT_LIST_SIZE = 20; // C(20, 10) = 184756
-    public static final int COM_LIST_SIZE = 15; // C(15, 7) = 6453
+    public static final int CHAT_LIST_SIZE = 30;
+    public static final int COM_LIST_SIZE = 20;
     public static int[] cList = new int[CHAT_LIST_SIZE];
     public static int[][][] comList = new int[COM_LIST_SIZE][][];
 
     static {
         for (int i = 0; i < CHAT_LIST_SIZE; i++) cList[i] = c(i + 1, Math.floorDiv(i + 1, 2));
         for (int i = 0; i < COM_LIST_SIZE; i++) {
-            comList[i] = combinations(i + 1, Math.floorDiv(i + 1, 2), 1).toArray(new int[][]{});
+            comList[i] = code(i + 1, Math.floorDiv(i + 1, 2), 1).toArray(new int[][]{});
         }
     }
 
@@ -27,10 +27,26 @@ public class MathUtils {
         return (int) (nu / de);
     }
 
-    public static int cHat(int n) {
+    public static int sp(int n) {
         int k = 0;
         while (k < CHAT_LIST_SIZE && cList[k] < n) k++;
         return k + 1;
+    }
+
+    public static int spBS(int n) {
+        int low = 0;
+        int high = cList.length - 1;
+        while (low < high) {
+            int mid = (low + high) / 2;
+            if (n < cList[mid]) {
+                high = mid - 1;
+            } else if (n == cList[mid]) {
+                return mid;
+            } else {
+                low = mid + 1;
+            }
+        }
+        return high + 1;
     }
 
     /**
@@ -41,10 +57,10 @@ public class MathUtils {
     public static int[][] getCombinations(int n) {
         return n <= COM_LIST_SIZE ?
                 comList[n-1] :
-                combinations(n, Math.floorDiv(n, 2), 1).toArray(new int[][]{});
+                code(n, Math.floorDiv(n, 2), 1).toArray(new int[][]{});
     }
 
-    private static ArrayList<int[]> combinations(int n, int k, int s) {
+    private static ArrayList<int[]> code(int n, int k, int s) {
         if (k > n || s > n) return new ArrayList<>();
         ArrayList<int[]> coms = new ArrayList<>(c(n-s, k));
         if (k == 1) {
@@ -52,14 +68,14 @@ public class MathUtils {
                 coms.add(new int[]{i});
             }
         } else {
-            ArrayList<int[]> sub1 = combinations(n, k - 1, s + 1);
+            ArrayList<int[]> sub1 = code(n, k - 1, s + 1);
             sub1.forEach(i->{
                 int[] c = new int[k];
                 c[0] = s;
-                Array.copy(i, 0, c, 1, k-1);
+                System.arraycopy(i, 0, c, 1, k-1);
                 coms.add(c);
             });
-            ArrayList<int[]> sub0 = combinations(n, k, s + 1);
+            ArrayList<int[]> sub0 = code(n, k, s + 1);
             coms.addAll(sub0);
         }
         return coms;

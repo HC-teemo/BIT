@@ -1,13 +1,15 @@
+package org.grapheco;
+
 import java.util.ArrayList;
 
 public class TreeNode {
     private TreeNode parent;
-    private final int id;
+    private final long id;
     private byte[] code;
     private int weight = -1;
     private ArrayList<TreeNode> children = new ArrayList<>();
 
-    public TreeNode(TreeNode parent, int id) {
+    public TreeNode(TreeNode parent, long id) {
         this.parent = parent;
         this.id = id;
     }
@@ -44,7 +46,7 @@ public class TreeNode {
         this.children.add(c);
     }
 
-    public int getId() {
+    public long getId() {
         return id;
     }
 }

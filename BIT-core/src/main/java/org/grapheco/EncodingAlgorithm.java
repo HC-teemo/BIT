@@ -1,23 +1,30 @@
+package org.grapheco;
+
+import org.roaringbitmap.BitSetUtil;
+import org.roaringbitmap.RoaringBitmap;
+import org.supercsv.io.CsvListWriter;
+import org.supercsv.io.ICsvListWriter;
+import org.supercsv.prefs.CsvPreference;
+
 import java.io.*;
+import java.nio.ByteBuffer;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-public class Main {
+public class EncodingAlgorithm {
     enum ChotomicType {
         Dichotomic, Polychotomic
     }
     public static void main(String[] args) {
         long t0 = System.currentTimeMillis();
-        String filepath = "/Users/huchuan/Documents/GitHub/TaxonomyTree/dataset/nodes.csv";
-        ArrayList<int []> data = IO.loadData(filepath);
+        String filepath = "/Users/huchuan/Documents/GitHub/BIT/dataset/NCBI.csv";
+        ArrayList<long []> data = IO.loadData(filepath);
 //        ArrayList<int []> data = IO.exampleData();
-        HashMap<Integer, TreeNode> tree = getTree(data);
-        TreeNode root = tree.get(1);
+        HashMap<Long, TreeNode> tree = getTree(data);
+        TreeNode root = tree.get(1L);
         long t1 = System.currentTimeMillis();
         System.out.println("Load Data Time: " + (t1 - t0));
-        Chotomic(root, ChotomicType.Polychotomic);
+        chotomic(root, ChotomicType.Polychotomic);
         long t2 = System.currentTimeMillis();
         System.out.println("Chotomic Time: " + (t2 - t1) + ", Bit Size: " + root.getWeight());
 //        show(root, 0);
@@ -28,7 +35,7 @@ public class Main {
         System.out.println();
     }
 
-    public static void Chotomic(TreeNode root, ChotomicType type) {
+    public static void chotomic(TreeNode root, ChotomicType type) {
         Stack<TreeNode> stack = new Stack<>();
         stack.push(root);
         TreeNode node;
@@ -56,7 +63,7 @@ public class Main {
                     TreeNode cn = children.get(childNumber - 1);
                     if (type == ChotomicType.Polychotomic && c2.getWeight() + 2 > cn.getWeight()) {
                         // dont combined!
-                        node.setWeight(cn.getWeight() + MathUtils.cHat(childNumber));
+                        node.setWeight(cn.getWeight() + MathUtils.sp(childNumber));
                         stack.pop();
                     } else {
                         // combined!
@@ -105,7 +112,7 @@ public class Main {
                         stack.push(c);
                     }
                 }else {
-                    int needBit = MathUtils.cHat(children.size());
+                    int needBit = MathUtils.sp(children.size());
                     // set code
                     int nextEndBitIndex = freeBitIndex + needBit;
                     int[][] getCode = MathUtils.getCombinations(needBit);
@@ -125,21 +132,24 @@ public class Main {
         }
     }
 
-    public static HashMap<Integer, TreeNode> getTree(ArrayList<int[]> data){
-        HashMap<Integer, TreeNode> map = new HashMap<Integer, TreeNode>(data.size() + 1);
-        map.put(1, new TreeNode(null, 1)); //push root
+    public static HashMap<Long, TreeNode> getTree(List<long[]> d) { return getTree(d, 1);}
+    public static HashMap<Long, TreeNode> getTree(List<long[]> d, long root){
+        HashMap<Long, TreeNode> map = new HashMap<Long, TreeNode>(d.size() + 1);
+        map.put(root, new TreeNode(null, root)); //push root
+        long[][] data = d.toArray(new long[][]{});
         // insert Node
-        for (int[] n : data) {
+        for (long[] n : data) {
             map.put(n[0], new TreeNode(null, n[0]));
         }
         // create parents
-        for (int[] n : data) {
+        for (long[] n : data) {
             TreeNode c = map.get(n[0]);
             TreeNode p = map.get(n[1]);
             c.setParent(p);
             p.addChildren(c);
         }
-        map.get(1).setParent(null);
+        map.get(root).setParent(null);
+        map.get(root).getChildren().remove(map.get(root));
         return map;
     }
 
@@ -154,21 +164,81 @@ public class Main {
         }
     }
 
-    public static boolean isParentOf(TreeNode p, TreeNode c) {
-        BitSet bp = BitSet.valueOf(p.getCode());
-        BitSet bc = BitSet.valueOf(c.getCode());
-        int ps = bp.size();
-        int ps2 = bp.length();
-        int cs = bc.size();
-        int cs2 = bc.length();
+    public static boolean isParentOf(byte[] p, byte[] c) {
+        BitSet bp = BitSet.valueOf(p);
+        BitSet bc = BitSet.valueOf(c);
         if (bp.length()>=bc.length()) return false;
         BitSet bp_ = (BitSet) bp.clone();
         bp.and(bc);
         return bp_.equals(bp);
     }
 
+
+    private static byte[] mask = new byte[]{
+            (byte)255,// 1111 1111
+            (byte)254,// 1111 1110
+            (byte)252,// 1111 1100
+            (byte)248,// 1111 1000
+            (byte)240,// 1111 0000
+            (byte)224,// 1110 0000
+            (byte)192,// 1100 0000
+            (byte)64, // 1000 0000
+    };
+    public static byte[] commonPrefix(byte[] a, byte[] b) {
+        for (int i = 0; i < Math.min(a.length, b.length); i++) {
+            if (a[i]!=b[i]) {
+                byte[] vs = Arrays.copyOf(a, i+1);
+                byte diffA = a[i];
+                byte diffB = b[i];
+                byte maskA = (byte) ~((~ diffA) | mask[1]);
+                byte maskB = (byte) ~((~ diffB) | mask[1]);
+                if (maskA!=maskB) return Arrays.copyOf(vs, i);
+                for (int j = 2; j < 7 && maskA==maskB; j++) {
+                    vs[i] = maskA;
+                    maskA = (byte) ~((~ diffA) | mask[j]);
+                    maskB = (byte) ~((~ diffB) | mask[j]);
+                }
+                return vs[i]==0?Arrays.copyOf(vs, i):vs;
+            }
+        }
+        return a.length >= b.length? b : a;
+    }
+
     public static Stream<TreeNode> getChildren(TreeNode p, Stream<TreeNode> nodes){
-        return nodes.filter(n->isParentOf(p,n));
+        return nodes.filter(n->isParentOf(p.getCode(),n.getCode()));
+    }
+
+
+    public static void out(TreeNode[] nodes) throws IOException {
+        ICsvListWriter listWriter = new CsvListWriter(new FileWriter("target/id-code.csv"),
+                CsvPreference.STANDARD_PREFERENCE);
+        listWriter.writeHeader("id","parent","vector");
+        int count = 0;
+
+            try {
+                for (TreeNode treeNode : nodes) {
+                    listWriter.write(Long.toString(treeNode.getId()), "",
+    //                        Integer.toString(treeNode.getParent()==null?0:treeNode.getParent().getId()),
+                            bytesToStr(treeNode.getCode()));
+                    count++;
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }finally {
+                listWriter.close();
+            }
+
+        System.out.println(count);
+    }
+
+    public static String bytesToStr(byte[] bytes) {
+        BitSet b = BitSet.valueOf(bytes);
+
+        StringBuffer sb = new StringBuffer();
+        for (int i = 0; i < b.length(); i++) {
+            sb.append(b.get(i)?"1":"0");
+        }
+        return sb.toString();
     }
 
 }
