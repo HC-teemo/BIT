@@ -1,5 +1,6 @@
 package org.grapheco;
 
+import com.carrotsearch.sizeof.RamUsageEstimator;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.logging.Log;
@@ -54,8 +55,8 @@ public class TreeIndex {
             long t0 = System.currentTimeMillis();
 //            treeIndexs.put(indexName, BIT.createIndex(data, root));
             treeIndex = BIT.createIndex(data, root);
-            log.debug("Created successfully! Time: %sms; Nodes: %s; Bit Size: %s", (System.currentTimeMillis() - t0),
-                    treeIndex.getNodeSize(), treeIndex.getVectorSize());
+            log.debug("Created successfully! Time: %sms; Nodes: %s; Bit Size: %s; Index Size: %s", (System.currentTimeMillis() - t0),
+                    treeIndex.getNodeSize(), treeIndex.getVectorSize(), treeIndex.printSize());
         }catch (Exception e){
             for (StackTraceElement stackTraceElement : e.getStackTrace()) {
                 log.debug(stackTraceElement.toString());
@@ -79,7 +80,7 @@ public class TreeIndex {
     @UserFunction(value = "BIT.commonAncestor")
     @Description("")
     public Node commonAncestor(@Name("firstNode") Node nodeA, @Name("secondNode") Node nodeB){
-        long prefixId = treeIndex.root.getId();
+        long prefixId = treeIndex.root;
         try {
             prefixId = treeIndex.commonAncestor(nodeA.getId(), nodeB.getId());
         } catch (Exception e) {
@@ -92,7 +93,9 @@ public class TreeIndex {
     @UserFunction(value = "BIT.allDescendants")
     @Description("")
     public List<Node> allDescendants(@Name("node") Node node){
+//    public List<Long> allDescendants(@Name("node") Node node){
         byte[] vector = null;
+        long t0 = System.currentTimeMillis();
         try {
             vector = treeIndex.getCodeById(node.getId());
         } catch (Exception e) {
@@ -103,9 +106,48 @@ public class TreeIndex {
             return new ArrayList<Node>();
         } else {
             BitSet bitSet = BitSet.valueOf(vector);
+            long t1 = System.currentTimeMillis();
             log.debug("The vector of %s is: %s", node.getId(), bitSet.toString());
             long[] descendantsId = treeIndex.geneFilter(bitSet);
-            return Arrays.stream(descendantsId).filter(value -> value!=node.getId()).mapToObj(value -> db.getNodeById(value)).collect(Collectors.toList());
+            long t2 = System.currentTimeMillis();
+//            ArrayList<Long> ids = new ArrayList<Long>(descendantsId.length);
+//            for (long id : descendantsId) ids.add(id);
+//            return ids;
+            List<Node> rsl = Arrays.stream(descendantsId).filter(value -> value!=node.getId()).mapToObj(value -> db.getNodeById(value)).collect(Collectors.toList());
+            long t3 = System.currentTimeMillis();
+            log.debug("get bit time: %s, gene filter time: %s, trans time: %s", t1- t0, t2-t1, t3 - t2);
+            return rsl;
+        }
+    }
+
+    @UserFunction(value = "BIT.allDescendantsId")
+    @Description("")
+    public List<Long> allDescendantsId(@Name("node") Node node){
+//    public List<Long> allDescendants(@Name("node") Node node){
+        byte[] vector = null;
+        long nodeId= node.getId();
+        long t0 = System.currentTimeMillis();
+        try {
+            vector = treeIndex.getCodeById(nodeId);
+        } catch (Exception e) {
+            log.debug("Create tree index fail, with exception: %s", e.getMessage());
+        }
+        if (vector==null) {
+            log.error("can not find this node in this index!");
+            return new ArrayList<Long>();
+        } else {
+            BitSet bitSet = BitSet.valueOf(vector);
+            long t1 = System.currentTimeMillis();
+            log.debug("The vector of %s is: %s", node.getId(), bitSet.toString());
+            long[] descendantsId = treeIndex.geneFilter(bitSet);
+            long t2 = System.currentTimeMillis();
+
+            ArrayList<Long> ids = new ArrayList<Long>(descendantsId.length);
+
+            for (long id : descendantsId) if(id != nodeId) ids.add(id);
+            long t3 = System.currentTimeMillis();
+            log.debug("get bit time: %s, gene filter time: %s, trans time: %s", t1- t0, t2-t1, t3 - t2);
+            return ids;
         }
     }
 

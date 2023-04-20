@@ -1,5 +1,6 @@
 package org.grapheco;
 
+import com.carrotsearch.sizeof.RamUsageEstimator;
 import org.roaringbitmap.RoaringBitmap;
 
 import java.util.*;
@@ -9,7 +10,7 @@ import java.util.stream.StreamSupport;
 
 public class BIT {
 
-    public TreeNode root;
+    public long root;
     private ArrayList<RoaringBitmap> indexs;
 
     private HashMap<String, Long> codeId = new HashMap<>();
@@ -66,7 +67,7 @@ public class BIT {
             bit.codeId.put(Base64.getEncoder().encodeToString(node.getCode()), node.getId());
             bit.insert(i, BitSet.valueOf(node.getCode()));
         }
-        bit.root = root;
+        bit.root = rootId;
         return bit;
     }
 
@@ -113,8 +114,8 @@ public class BIT {
         if (genes.isEmpty()){
             return indexId;
         } else {
-            RoaringBitmap result = select.stream().reduce((a, b)->{a.and(b); return a;}).get();
-            return StreamSupport.stream(result.spliterator(), false).mapToLong(this::getIdByIndex).toArray();
+            RoaringBitmap result = select.stream().parallel().reduce((a, b)->{a.and(b); return a;}).get();
+            return StreamSupport.stream(result.spliterator(), true).mapToLong(this::getIdByIndex).toArray();
         }
 
     }
@@ -122,4 +123,12 @@ public class BIT {
     public int getVectorSize(){ return this.indexs.size();}
 
     public int getNodeSize(){ return this.indexId.length;}
+
+    public String printSize(){
+        return String.format("indexs: %s, codeId: %s, codes:%s, idIndex:%s, indexId:%s, all: %s", RamUsageEstimator.sizeOf(indexs),
+                RamUsageEstimator.sizeOf(codeId),
+                RamUsageEstimator.sizeOf(codes),
+                RamUsageEstimator.sizeOf(idIndex),
+                RamUsageEstimator.sizeOf(indexId), RamUsageEstimator.sizeOf(this));
+    }
 }
