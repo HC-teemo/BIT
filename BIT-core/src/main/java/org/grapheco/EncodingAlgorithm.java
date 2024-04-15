@@ -17,7 +17,7 @@ public class EncodingAlgorithm {
     }
     public static void main(String[] args) {
         long t0 = System.currentTimeMillis();
-        String filepath = "/Users/huchuan/Documents/GitHub/BIT/dataset/NCBI.csv";
+        String filepath = "/Users/huchuan/Documents/GitHub/BIT/dataset/NCBI_h3.csv";
         ArrayList<long []> data = IO.loadData(filepath);
 //        ArrayList<int []> data = IO.exampleData();
         HashMap<Long, TreeNode> tree = getTree(data);

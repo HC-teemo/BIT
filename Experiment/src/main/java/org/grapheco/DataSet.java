@@ -4,10 +4,13 @@ import java.io.File;
 import java.util.HashMap;
 
 public class DataSet {
-    public static final String NCBI = "../dataset/NCBI_bak.csv";
+    public static final String NCBI = "../dataset/NCBI.csv";
 
     public static final String NCBI_h3 = "../dataset/NCBI_h3.csv";
     public static final String NCBI_h4 = "../dataset/NCBI_h4.csv";
+    public static final String NCBI_h5 = "../dataset/NCBI_h5.csv";
+    public static final String NCBI_h6 = "../dataset/NCBI_h6.csv";
+    public static final String NCBI_h10 = "../dataset/NCBI_h10.csv";
 
     public static final File query1File = new File("../dataset/test/query1.csv");
     public static final File query2File = new File("../dataset/test/query2.csv");

@@ -37,7 +37,7 @@ public class BITTest extends TestBase{
     @Override
     protected boolean query3(Session session, long id, int expect) {
         int actual = session.run("MATCH (s:Taxonomy{id:"+id+"}) \n" +
-                "unwind BIT.allDescendants(s) as c return c").list().size();
+                "unwind BIT.allDescendantsId(s) as c return c").list().size();
         if (actual!=expect) System.out.printf("fail in test: %s, expect: %s, actual: %s \n", id, expect, actual);
         return actual == expect;
     }

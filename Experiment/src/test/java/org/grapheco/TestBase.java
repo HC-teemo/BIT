@@ -7,7 +7,8 @@ import java.util.Arrays;
 
 public abstract class TestBase {
 
-    static String url = "bolt://localhost:7687";
+//    static String url = "bolt://localhost:7687";
+    static String url = "bolt://10.0.82.144:7687";
 
     static String username = "neo4j";
 
