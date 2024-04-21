@@ -243,6 +243,7 @@ class EncodingAlgorithmTest {
         b.set(0);
         b.set(1);
         assertArrayEquals(a.toByteArray(), EncodingAlgorithm.commonPrefix(a.toByteArray(), b.toByteArray()));
+        assertArrayEquals(a.toByteArray(), EncodingAlgorithm.commonPrefix(new byte[][]{a.toByteArray(), b.toByteArray()}));
 
         a = new BitSet(); // 1000 0100 001
         a.set(0);
@@ -256,6 +257,7 @@ class EncodingAlgorithmTest {
         BitSet c = (BitSet) a.clone(); // 1000 0100 0
         c.clear(10);
         assertArrayEquals(c.toByteArray(), EncodingAlgorithm.commonPrefix(a.toByteArray(), b.toByteArray()));
+        assertArrayEquals(c.toByteArray(), EncodingAlgorithm.commonPrefix(new byte[][]{a.toByteArray(), b.toByteArray()}));
 
         a = new BitSet(); // 1000 0100 101
         a.set(0);
@@ -271,6 +273,7 @@ class EncodingAlgorithmTest {
         c.clear(10);
         c.clear(8);
         assertArrayEquals(c.toByteArray(), EncodingAlgorithm.commonPrefix(a.toByteArray(), b.toByteArray()));
+        assertArrayEquals(c.toByteArray(), EncodingAlgorithm.commonPrefix(new byte[][]{a.toByteArray(), b.toByteArray()}));
     }
 
     @Test

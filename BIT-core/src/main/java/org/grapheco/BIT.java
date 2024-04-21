@@ -95,10 +95,12 @@ public class BIT {
         return EncodingAlgorithm.isParentOf(getCodeById(a), getCodeById(c));
     }
 
-    public long commonAncestor(long a, long b) throws Exception {
-        byte[] va = getCodeById(a);
-        byte[] vb = getCodeById(b);
-        byte[] prefix = EncodingAlgorithm.commonPrefix(va, vb);
+    public long commonAncestor(long[] ids) throws Exception {
+        byte[][] vs = new byte[ids.length][];
+        for (int i = 0; i < ids.length; i++) {
+            vs[i] = getCodeById(ids[i]);
+        }
+        byte[] prefix = EncodingAlgorithm.commonPrefix(vs);
         BitSet bitSet = BitSet.valueOf(prefix);
         String key = Base64.getEncoder().encodeToString(prefix);
         while (!this.codeId.containsKey(key) && prefix.length!=0){ //remove a gene

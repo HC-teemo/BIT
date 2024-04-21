@@ -239,6 +239,62 @@ public class EncodingAlgorithm {
         return a.length >= b.length? b : a;
     }
 
+
+    public static byte[] commonPrefix(byte[][] arrays) {
+        if (arrays == null || arrays.length == 0) {
+            return new byte[0];
+        }
+
+        int minLength = Integer.MAX_VALUE;
+        for (byte[] array : arrays) {
+            if (array.length < minLength) {
+                minLength = array.length;
+            }
+        }
+
+        int prefixLengthInBytes = 0;
+        boolean prefixMismatchFound = false;
+
+        outerLoop:
+        for (int i = 0; i < minLength; i++) {
+            byte currentByte = arrays[0][i];
+            for (int j = 1; j < arrays.length; j++) {
+                if (arrays[j][i] != currentByte) {
+                    prefixMismatchFound = true;
+                    break outerLoop;
+                }
+            }
+            prefixLengthInBytes++;
+        }
+
+        if (prefixMismatchFound && prefixLengthInBytes < minLength) {
+            // Find the exact bit where mismatch occurs in the last matched byte
+            byte lastMatchedByte = arrays[0][prefixLengthInBytes];
+            int bitPosition = 0; // Start from the most significant bit
+            outerLoop:
+            while (bitPosition <= 7) {
+                int mask = 1 << bitPosition;
+                for (int j = 1; j < arrays.length; j++) {
+                    if ((arrays[j][prefixLengthInBytes] & mask) != (lastMatchedByte & mask)) {
+                        break outerLoop;
+                    }
+                }
+                bitPosition++;
+            }
+            lastMatchedByte = (byte) ~((~ lastMatchedByte) | mask[bitPosition]);
+            if (lastMatchedByte!=0) {
+                arrays[0][prefixLengthInBytes] = lastMatchedByte;
+                prefixLengthInBytes++;
+            }
+        }
+
+        byte[] prefix = new byte[prefixLengthInBytes];
+        System.arraycopy(arrays[0], 0, prefix, 0, prefixLengthInBytes);
+        return prefix;
+    }
+
+
+
     public static Stream<TreeNode> getChildren(TreeNode p, Stream<TreeNode> nodes){
         return nodes.filter(n->isParentOf(p.getCode(),n.getCode()));
     }
