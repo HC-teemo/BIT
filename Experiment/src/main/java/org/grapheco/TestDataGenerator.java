@@ -4,6 +4,9 @@ import java.util.*;
 
 public class TestDataGenerator {
 
+
+
+
     public static void generate4Query1(int size){
         HashMap<Long, TreeNode> tree = DataSet.treeData(DataSet.NCBI);
 //        HashMap<Long, TreeNode> h3 = DataSet.treeData(DataSet.NCBI_h3);
@@ -55,11 +58,11 @@ public class TestDataGenerator {
         IO.toCSV(DataSet.query2File.getAbsolutePath(), new String[]{"nodeA", "nodeB", "result"}, sampleText);
     }
 
-    public static void generate4Query3(int size){
-        HashMap<Long, TreeNode> tree = DataSet.treeData(DataSet.NCBI);
+    public static void generateExp2(int size){
+        HashMap<Long, TreeNode> tree = DataSet.treeData(DataSet.NCBI414_h6);
 
         TreeNode[] data = tree.values().toArray(new TreeNode[]{});
-        TreeNode[] sample = sample(data, size, 10000); // sample in h4
+        TreeNode[] sample = sample(data, size, 100); // sample in h4
         String[][] sampleText = new String[size][2];
 
         for (int i = 0; i < size; i++) {
@@ -70,7 +73,7 @@ public class TestDataGenerator {
                     String.valueOf(desNum(n))
             };
         }
-        IO.toCSV(DataSet.query3File.getAbsolutePath(), new String[]{"node", "descendantsNum"}, sampleText);
+        IO.toCSV(DataSet.exp2File10000.getAbsolutePath(), new String[]{"node", "descendantsNum"}, sampleText);
     }
 
     private static TreeNode[] sample(TreeNode[] nodes, int num){return sample(nodes, num, 0);}

@@ -8,10 +8,13 @@ import java.util.stream.Collectors;
 public class generateDate {
     @Test
     void generate(){
-//        TestDataGenerator.generate4Query1(10);
-//        TestDataGenerator.generate4Query2(10);
-        TestDataGenerator.generate4Query3(1);
+//        TestDataGenerator.generateExp2(10000);
+        TestDataGenerator.generate4Query2(10);
+//        TestDataGenerator.generate4Query3(1);
+
     }
+
+
 
     @Test
     void encoding(){

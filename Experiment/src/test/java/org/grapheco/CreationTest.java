@@ -9,7 +9,7 @@ import java.util.HashMap;
 public class CreationTest {
     @Test
     void creationTest(){
-        HashMap<Long, TreeNode> data = DataSet.treeData(DataSet.NCBI_h3);
+        HashMap<Long, TreeNode> data = DataSet.treeData(DataSet.NCBI);
         TreeNode root = data.get(1L);
         long t0 = System.currentTimeMillis();
         EncodingAlgorithm.chotomic(root, EncodingAlgorithm.ChotomicType.Polychotomic);
