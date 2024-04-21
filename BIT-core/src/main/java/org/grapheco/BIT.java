@@ -83,8 +83,11 @@ public class BIT {
     public long getIdByIndex(int index) { return this.indexId[index];}
 
     public byte[] getCodeById(long id) throws Exception {
-        if (!this.idIndex.containsKey(id)) throw new Exception("can not find code of " + id);
+//        if (!this.idIndex.containsKey(id)) throw new Exception("can not find code of " + id);
+        if (this.idIndex.get(id) == null)
+            return null;
         int index= this.idIndex.get(id);
+
         return this.codes[index];
     }
 

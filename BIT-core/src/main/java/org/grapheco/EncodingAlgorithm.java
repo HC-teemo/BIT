@@ -16,23 +16,58 @@ public class EncodingAlgorithm {
         Dichotomic, Polychotomic
     }
     public static void main(String[] args) {
-        long t0 = System.currentTimeMillis();
-        String filepath = "/Users/huchuan/Documents/GitHub/BIT/dataset/NCBI_h3.csv";
-        ArrayList<long []> data = IO.loadData(filepath);
-//        ArrayList<int []> data = IO.exampleData();
-        HashMap<Long, TreeNode> tree = getTree(data);
-        TreeNode root = tree.get(1L);
-        long t1 = System.currentTimeMillis();
-        System.out.println("Load Data Time: " + (t1 - t0));
-        chotomic(root, ChotomicType.Polychotomic);
-        long t2 = System.currentTimeMillis();
-        System.out.println("Chotomic Time: " + (t2 - t1) + ", Bit Size: " + root.getWeight());
-//        show(root, 0);
-        encode(root);
-        long t3 = System.currentTimeMillis();
-        System.out.println("Encoding Time: " + (t3 - t2));
+        String log = "D:\\GithubRepository\\BIT\\dataset\\log-exp1.txt";
+        String filepath = "D:\\GithubRepository\\BIT\\dataset\\NCBI414.csv";
+        String filepath1 = "D:\\GithubRepository\\BIT\\dataset\\exp1\\h3.csv";
+        String filepath2 = "D:\\GithubRepository\\BIT\\dataset\\exp1\\h4.csv";
+        String filepath3 = "D:\\GithubRepository\\BIT\\dataset\\exp1\\h5.csv";
+        String filepath4 = "D:\\GithubRepository\\BIT\\dataset\\exp1\\h6.csv";
+        String filepath5 = "D:\\GithubRepository\\BIT\\dataset\\exp1\\h10.csv";
+        String filepath6 = "D:\\GithubRepository\\BIT\\dataset\\exp1\\h12.csv";
+        String filepath7 = "D:\\GithubRepository\\BIT\\dataset\\exp1\\h14.csv";
+        String filepath8 = "D:\\GithubRepository\\BIT\\dataset\\exp1\\h20.csv";
+
+        String[] All_filepath = {filepath,filepath1, filepath2, filepath3, filepath4, filepath5, filepath6, filepath7, filepath8};
+
+        for (String file:All_filepath
+             ) {
+            writeLog(log,file);
+            for (int i = 0; i < 1; i++) {
+                long t1 = System.nanoTime();
+                ArrayList<long []> data = IO.loadData(file);
+                //        ArrayList<int []> data = IO.exampleData();
+                HashMap<Long, TreeNode> tree = getTree(data);
+                TreeNode root = tree.get(1L);
+                double milliseconds1 = (System.nanoTime() - t1) / 1e6;
+                writeLog(log,"Time1:" + milliseconds1);
+
+                long t2 = System.nanoTime();
+                chotomic(root, ChotomicType.Polychotomic);
+                double milliseconds2 = (System.nanoTime() - t2) / 1e6;
+
+                writeLog(log,"Time2:" + milliseconds2 + ",Bit2:" + root.getWeight());
+
+                long t3 = System.nanoTime();
+                //        show(root, 0);
+                encode(root);
+                double milliseconds3 = (System.nanoTime() - t3) / 1e6;
+
+                writeLog(log,"Time3:" + milliseconds3);
+            }
+        }
+
+
 //        map.values().forEach( n -> System.out.println(BitSet.valueOf(n.getCode()).toString()));
-        System.out.println();
+    }
+
+    public static void writeLog(String filename,String content){
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename, true))) {
+            writer.write(content);
+            writer.newLine();
+            System.out.println("Content appended to file successfully.");
+        } catch (IOException e) {
+            System.err.println("Error appending content to file: " + e.getMessage());
+        }
     }
 
     public static void chotomic(TreeNode root, ChotomicType type) {
