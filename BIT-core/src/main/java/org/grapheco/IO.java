@@ -83,4 +83,15 @@ public class IO {
             throw new RuntimeException(e);
         }
     }
+
+    public static void writeLog(String filename,String content){
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename, true))) {
+            writer.write(content);
+            writer.newLine();
+            System.out.println("Content appended to file successfully.");
+        } catch (IOException e) {
+            System.err.println("Error appending content to file: " + e.getMessage());
+        }
+    }
+
 }

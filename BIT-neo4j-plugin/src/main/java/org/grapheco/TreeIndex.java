@@ -81,8 +81,9 @@ public class TreeIndex {
     @Description("")
     public Node commonAncestor(@Name("firstNode") Node nodeA, @Name("secondNode") Node nodeB){
         long prefixId = treeIndex.root;
+
         try {
-            prefixId = treeIndex.commonAncestor(nodeA.getId(), nodeB.getId());
+            prefixId = treeIndex.commonAncestor(new long[]{nodeA.getId(), nodeB.getId()});
         } catch (Exception e) {
             log.debug("Common ancestor fail: %s", e.getMessage());
         }

@@ -6,6 +6,8 @@ import org.roaringbitmap.RoaringBitmap;
 
 import java.util.*;
 
+import static org.grapheco.EncodingAlgorithm.*;
+import static org.grapheco.IO.writeLog;
 import static org.junit.jupiter.api.Assertions.*;
 
 class EncodingAlgorithmTest {
@@ -21,14 +23,58 @@ class EncodingAlgorithmTest {
             new int[]{866809, 434253},
             new int[]{1527986, 2541676}
     };
+
+    @Test
+    void exp1(){
+        String log = "../log/BIT-exp1.txt";
+        String filepath = "../dataset/NCBI414.csv";
+        String filepath1 = "../dataset/exp1/h3.csv";
+        String filepath2 = "../dataset/exp1/h4.csv";
+        String filepath3 = "../dataset/exp1/h5.csv";
+        String filepath4 = "../dataset/exp1/h6.csv";
+        String filepath5 = "../dataset/exp1/h10.csv";
+        String filepath6 = "../dataset/exp1/h12.csv";
+        String filepath7 = "../dataset/exp1/h14.csv";
+        String filepath8 = "../dataset/exp1/h20.csv";
+
+        String[] All_filepath = {filepath,filepath1, filepath2, filepath3, filepath4, filepath5, filepath6, filepath7, filepath8};
+
+        for (String file:All_filepath
+        ) {
+            writeLog(log,file);
+            for (int i = 0; i < 1; i++) {
+                long t1 = System.nanoTime();
+                ArrayList<long []> data = IO.loadData(file);
+                //        ArrayList<int []> data = IO.exampleData();
+                HashMap<Long, TreeNode> tree = getTree(data);
+                TreeNode root = tree.get(1L);
+                double milliseconds1 = (System.nanoTime() - t1) / 1e6;
+                writeLog(log,"Time1:" + milliseconds1);
+
+                long t2 = System.nanoTime();
+                chotomic(root, EncodingAlgorithm.ChotomicType.Polychotomic);
+                double milliseconds2 = (System.nanoTime() - t2) / 1e6;
+
+                writeLog(log,"Time2:" + milliseconds2 + ",Bit2:" + root.getWeight());
+
+                long t3 = System.nanoTime();
+                //        show(root, 0);
+                encode(root);
+                double milliseconds3 = (System.nanoTime() - t3) / 1e6;
+
+                writeLog(log,"Time3:" + milliseconds3);
+            }
+        }
+    }
+
+
     @Test
     void verify() {
-
-        String filepath = "/Users/huchuan/Documents/GitHub/TaxonomyTree/dataset/NCBI.csv";
+        String filepath = "../dataset/olddata/NCBI.csv";
         ArrayList<long []> data = IO.loadData(filepath);
-        HashMap<Long, TreeNode> tree = EncodingAlgorithm.getTree(data);
+        HashMap<Long, TreeNode> tree = getTree(data);
         TreeNode root = tree.get(1);
-        EncodingAlgorithm.chotomic(root, EncodingAlgorithm.ChotomicType.Polychotomic);
+        chotomic(root, EncodingAlgorithm.ChotomicType.Polychotomic);
         EncodingAlgorithm.encode(root);
         long t0 = System.currentTimeMillis();
         for(int[] test : testArr){
@@ -42,9 +88,9 @@ class EncodingAlgorithmTest {
     @Test
     void isParentOf() {
         ArrayList<long []> data = IO.exampleData();
-        HashMap<Long, TreeNode> tree = EncodingAlgorithm.getTree(data);
+        HashMap<Long, TreeNode> tree = getTree(data);
         TreeNode root = tree.get(1);
-        EncodingAlgorithm.chotomic(root, EncodingAlgorithm.ChotomicType.Polychotomic);
+        chotomic(root, EncodingAlgorithm.ChotomicType.Polychotomic);
         EncodingAlgorithm.encode(root);
 
         /*
@@ -66,9 +112,9 @@ class EncodingAlgorithmTest {
     void getChildren() {
         String filepath = "/Users/huchuan/Documents/GitHub/TaxonomyTree/dataset/NCBI.csv";
         ArrayList<long[]> data = IO.loadData(filepath);
-        HashMap<Long, TreeNode> tree = EncodingAlgorithm.getTree(data);
+        HashMap<Long, TreeNode> tree = getTree(data);
         TreeNode root = tree.get(1);
-        EncodingAlgorithm.chotomic(root, EncodingAlgorithm.ChotomicType.Polychotomic);
+        chotomic(root, EncodingAlgorithm.ChotomicType.Polychotomic);
         EncodingAlgorithm.encode(root);
         int testNode = 2731342;
         long t0 = System.currentTimeMillis();
@@ -97,9 +143,9 @@ class EncodingAlgorithmTest {
     void findChildrenExpr() throws Exception {
         String filepath = "/Users/huchuan/Documents/GitHub/TaxonomyTree/dataset/NCBI.csv";
         ArrayList<long []> data = IO.loadData(filepath);
-        HashMap<Long, TreeNode> tree = EncodingAlgorithm.getTree(data);
+        HashMap<Long, TreeNode> tree = getTree(data);
         TreeNode root = tree.get(1);
-        EncodingAlgorithm.chotomic(root, EncodingAlgorithm.ChotomicType.Polychotomic);
+        chotomic(root, EncodingAlgorithm.ChotomicType.Polychotomic);
         int size = root.getWeight();
         EncodingAlgorithm.encode(root);
 
@@ -118,7 +164,7 @@ class EncodingAlgorithmTest {
         for (int i = 0; i < s; i++) {
             tex_ids[i] = nodes[random.nextInt(nodes.length - 1)].getId();
         }
-        HashMap<Long, TreeNode> originTree = EncodingAlgorithm.getTree(data);
+        HashMap<Long, TreeNode> originTree = getTree(data);
 
         //________TEST_________
         // Method 1
@@ -163,9 +209,9 @@ class EncodingAlgorithmTest {
     void isChildrenExpr() throws Exception {
         String filepath = "/Users/huchuan/Documents/GitHub/TaxonomyTree/dataset/NCBI.csv";
         ArrayList<long []> data = IO.loadData(filepath);
-        HashMap<Long, TreeNode> tree = EncodingAlgorithm.getTree(data);
+        HashMap<Long, TreeNode> tree = getTree(data);
         TreeNode root = tree.get(1);
-        EncodingAlgorithm.chotomic(root, EncodingAlgorithm.ChotomicType.Polychotomic);
+        chotomic(root, EncodingAlgorithm.ChotomicType.Polychotomic);
         int size = root.getWeight();
         EncodingAlgorithm.encode(root);
 
@@ -177,7 +223,7 @@ class EncodingAlgorithmTest {
             bit.insert(i, BitSet.valueOf(nodes[i].getCode()));
         }
         System.out.println("BIT Time: " + (System.currentTimeMillis() - ta));
-        HashMap<Long, TreeNode> originTree = EncodingAlgorithm.getTree(data);
+        HashMap<Long, TreeNode> originTree = getTree(data);
         int s = 100000;
         long[][] tests = new long[s][2];
         Random random = new Random();
@@ -214,9 +260,9 @@ class EncodingAlgorithmTest {
     void sizeExp() throws Exception {
         String filepath = "/Users/huchuan/Documents/GitHub/TaxonomyTree/dataset/NCBI.csv";
         ArrayList<long []> data = IO.loadData(filepath);
-        HashMap<Long, TreeNode> tree = EncodingAlgorithm.getTree(data);
+        HashMap<Long, TreeNode> tree = getTree(data);
         TreeNode root = tree.get(1);
-        EncodingAlgorithm.chotomic(root, EncodingAlgorithm.ChotomicType.Polychotomic);
+        chotomic(root, EncodingAlgorithm.ChotomicType.Polychotomic);
         int size = root.getWeight();
         EncodingAlgorithm.encode(root);
 
@@ -226,7 +272,7 @@ class EncodingAlgorithmTest {
             bit.insert(i, BitSet.valueOf(nodes[i].getCode()));
         }
         long[] ids = Arrays.stream(nodes).mapToLong(TreeNode::getId).toArray();
-        HashMap<Long, TreeNode> originTree = EncodingAlgorithm.getTree(data);
+        HashMap<Long, TreeNode> originTree = getTree(data);
         System.out.println("tree Size: " + RamUsageEstimator.sizeOf(originTree) / RamUsageEstimator.ONE_MB + "MB");
         System.out.println("tree value Size: " + RamUsageEstimator.sizeOf(originTree.values()) / RamUsageEstimator.ONE_MB + "MB");
         System.out.println("tree root Size: " + RamUsageEstimator.sizeOf(originTree.get(1)) / RamUsageEstimator.ONE_MB + "MB");

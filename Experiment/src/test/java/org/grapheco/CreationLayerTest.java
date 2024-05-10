@@ -19,6 +19,7 @@ public class CreationLayerTest {
     private static int currentIndex = 0;
     private static String[][] result;
     private static int index = 0;
+
     @Test
     void getHighLayer(){
         HashMap<Long, TreeNode> tree = DataSet.treeData(DataSet.NCBI);

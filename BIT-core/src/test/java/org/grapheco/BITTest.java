@@ -24,13 +24,11 @@ class BITTest {
         System.out.println(bit.printSize());
     }
 
-
-
     @Test
     void list() throws Exception {
         BIT bit = BIT.createIndex(IO.loadData("../dataset/NCBI414.csv"), 1L);
-        String pathname = "D:\\GithubRepository\\BIT\\dataset\\exp2\\h6_1000.csv";
-        String logpath = "C:\\Users\\MSI-NB\\Desktop\\BIT\\log\\exp2\\BIT-list.txt";
+        String pathname = "../dataset/exp2/h6_1000.csv"; //
+        String logpath = "../log/exp2/BIT-list.txt";
         long[][] test = IO.read(new File(pathname)).stream().map(line -> {
             return new long[]{
                     Long.parseLong(line[0]),
@@ -54,10 +52,10 @@ class BITTest {
         }
     }
 
-    @Test
+    @Test //2496434 is a leaf node
     void list2496434() throws Exception {
         BIT bit = BIT.createIndex(IO.loadData("../dataset/NCBI414.csv"), 1L);
-        String logpath = "C:\\Users\\MSI-NB\\Desktop\\taxonkit\\exp2\\log\\BIT-list-2496434.txt";
+        String logpath = "../log/exp2/BIT-list-2496434.txt";
 
         appendToFile(logpath,"2496434\n");
 
@@ -84,63 +82,55 @@ class BITTest {
 
         for (long[] t: test){
             long t0 = System.nanoTime();
-            long ancestor = bit.commonAncestor(t[0],t[1]);
+            long ancestor = bit.commonAncestor(t);
             System.out.println(System.nanoTime() - t0 + "," + t[0] + "," + t[1]+","+ancestor);
         }
     }
 
-    @Test
+    @Test // BIT exp3 -> lca
     void lcaList() throws Exception{
         BIT bit = BIT.createIndex(IO.loadData("../dataset/NCBI414.csv"), 1L);
-        String logfile = "D:\\GithubRepository\\BIT\\dataset\\log-exp3.txt";
-        String filepath = "D:\\GithubRepository\\BIT\\dataset\\exp3\\lca2.csv";
-        long[][] test = readCSV(new File(filepath));
+        String logfile = "../log/BIT-exp3.txt";
+        String filepath2 = "../dataset/exp3/lca2.csv";
+        String filepath4 = "../dataset/exp3/lca4.csv";
+        String filepath8 = "../dataset/exp3/lca8.csv";
+        String filepath16 = "../dataset/exp3/lca16.csv";
+        String filepath32 = "../dataset/exp3/lca32.csv";
+        String addition1 = "../dataset/exp3/exp3-addition1.csv";
+        String addition2 = "../dataset/exp3/exp3-addition2.csv";
 
-        long ancestor = 0L;
+        String[] all_file = {filepath2,filepath4,filepath8,filepath16,filepath32,addition1,addition2};
 
-        appendToFile(logfile,filepath+"\n");
+        for (String file: all_file
+             ) {
+            long[][] test = readCSV(new File(file));
 
-        for (int j =0;j<60;j++){
-            long t0 = System.nanoTime();
+            long ancestor = 0L;
+
+            appendToFile(logfile,file+"\n");
+
+            for (int j =0;j<120;j++){
+                long t0 = System.nanoTime();
 
 
-            for (long[] row : test) {
-                ancestor = bit.commonAncestor(row);
+                for (long[] row : test) {
+                    ancestor = bit.commonAncestor(row);
+                }
+                double milliseconds = (System.nanoTime() - t0) / 1e6;
+                String content = "round"+j+":"+milliseconds+ "\n";
+                appendToFile(logfile,content);
             }
-            double milliseconds = (System.nanoTime() - t0) / 1e6;
-            String content = "round"+j+":"+milliseconds+ "\n";
-            appendToFile(logfile,content);
         }
 
     }
 
-    public static long[][] readCSV(File file) throws IOException {
-        List<long[]> data = new ArrayList<>();
-        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
-            String line;
-            boolean skipFirstLine = true;
-            while ((line = br.readLine()) != null) {
-                if (skipFirstLine) {
-                    // 跳过第一行
-                    skipFirstLine = false;
-                    continue;
-                }
-                String[] values = line.split(",");
-                long[] row = new long[values.length];
-                for (int i = 0; i < values.length; i++) {
-                    row[i] = Long.parseLong(values[i]);
-                }
-                data.add(row);
-            }
-        }
-        return data.toArray(new long[0][]);
-    }
 
-    @Test
+
+    @Test // BIT exp4 -> is ancestor
     void isAncestor_() throws Exception{
         BIT bit = BIT.createIndex(IO.loadData("../dataset/NCBI414.csv"), 1L);
-        String inputfile = "D:\\GithubRepository\\BIT\\dataset\\exp4\\exp4-3-nochild.csv";
-        String logfile = "D:\\GithubRepository\\BIT\\dataset\\log-exp4.txt";
+        String inputfile = "../dataset/exp4/exp4-3-nochild.csv";
+        String logfile = "../log/BIT-exp4.txt";
 
         long[][] test = IO.read(new File(inputfile)).stream().map(line -> {
             return new long[]{
@@ -161,6 +151,27 @@ class BITTest {
             appendToFile(logfile,content);
         }
 
+    }
+
+    public static long[][] readCSV(File file) throws IOException {
+        List<long[]> data = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+            String line;
+            boolean skipFirstLine = true;
+            while ((line = br.readLine()) != null) {
+                if (skipFirstLine) {
+                    skipFirstLine = false;
+                    continue;
+                }
+                String[] values = line.split(",");
+                long[] row = new long[values.length];
+                for (int i = 0; i < values.length; i++) {
+                    row[i] = Long.parseLong(values[i]);
+                }
+                data.add(row);
+            }
+        }
+        return data.toArray(new long[0][]);
     }
 
     public static void appendToFile(String filePath, String content) {
