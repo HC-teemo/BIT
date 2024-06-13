@@ -3,9 +3,10 @@ package org.grapheco;
 import com.carrotsearch.sizeof.RamUsageEstimator;
 import org.roaringbitmap.RoaringBitmap;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class BIT {
@@ -45,6 +46,44 @@ public class BIT {
             bit1.and(bit2);
             return bit1;
         }).get();
+    }
+
+    public static BIT fromCSV(String path) throws Exception {
+        File csv = new File(path);
+        BufferedReader br = new BufferedReader(new FileReader(csv));
+        String[] header = br.readLine().split(",");
+        int length = Integer.parseInt(header[0]);
+        int weight = Integer.parseInt(header[1]);
+
+        BIT bit = new BIT(weight);
+        bit.indexId = new long[length];
+        bit.codes = new byte[length][];
+        int i = 0;
+
+        String line = "";
+        while ((line = br.readLine()) != null){
+            String[] split = line.trim().split(",");
+            long id = Long.parseLong(split[0]);
+            String codeStr = split[1];
+            byte[] code = Base64.getDecoder().decode(codeStr);
+
+            bit.indexId[i] = id;
+            bit.codes[i] = code;
+            bit.idIndex.put(id, i);
+            bit.codeId.put(codeStr, id);
+            bit.insert(i, BitSet.valueOf(code));
+            i++;
+        }
+        return bit;
+    }
+
+    public void toCSV(String path) throws Exception {
+        String[][] csv = new String[2][this.indexId.length];
+        for (int i = 0; i < this.indexId.length; i++) {
+            csv[0][i] = this.indexId[i] + "";
+            csv[1][i] = Base64.getEncoder().encodeToString(this.codes[i]);
+        }
+        IO.toCSV(path, new String[]{getNodeSize()+"", getVectorSize()+""}, csv);
     }
 
     public static BIT createIndex(List<long[]> data, long rootId) throws Exception {
