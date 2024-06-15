@@ -1,44 +1,87 @@
 package org.grapheco.bit;
 
-import com.carrotsearch.sizeof.RamUsageEstimator;
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
+import org.roaringbitmap.RoaringBitmap;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
+import java.io.*;
 import java.util.*;
+import java.util.stream.IntStream;
 
 public class BITwithBytes {
+    static final long allBitsOne = 0xFFFFFFFFFFFFFFFFL;
 
-    public long root;
-    private long[][] indexs;
+    private static final Kryo kryo = new Kryo();
+    static {
+        kryo.register(long[][].class);
+        kryo.register(HashMap.class);
+        kryo.register(long[].class);
+        kryo.register(byte[][].class);
+        kryo.register(byte[].class);
+    }
 
-    private HashMap<String, Long> codeId = new HashMap<>();
+
+//    public long root;
+    private long[][] bitmaps;
+
+    private HashMap<String, Long> code2Id = new HashMap<>();
 
     private byte[][] codes;
 
-    private HashMap<Long, Integer> idIndex = new HashMap<>();
+    private HashMap<Long, Integer> id2Index = new HashMap<>();
 
-    private long[] indexId;
+    private long[] ids;
 
-    public BITwithBytes(int weight, int size) {
-        init(weight, size);
+    public BITwithBytes() {
     }
 
-    public void init(int weight, int size){
-        this.indexs = new long[size][];
+    public BITwithBytes(long[][] bitmaps, HashMap<String, Long> code2Id, byte[][] codes, HashMap<Long, Integer> id2Index, long[] ids) {
+        this.bitmaps = bitmaps;
+        this.code2Id = code2Id;
+        this.codes = codes;
+        this.id2Index = id2Index;
+        this.ids = ids;
     }
 
-    public long[] filter(BitSet vector) throws Exception {
-        if (vector.length() > indexs.length) throw new Exception("out of bits.");
-        return vector.stream().mapToObj(i -> indexs[i]).reduce(
-                (a,b)-> {
-                    int length = Math.min(a.length, b.length);
-                    for (int i = 0; i < length; i++)
-                        a[i]= a[i] & b[i];
-                    return a;
-                }).get();
+    public long[] filter(int[] index) throws Exception {
+        if (index.length == 0) {
+            long[] result = new long[this.bitmaps[0].length];
+            Arrays.fill(result, allBitsOne);
+            return result;
+        }
+        long[] result = bitmaps[index[0]];
+        for (int i = 1; i < index.length; i++) {
+            long[] bitmap = bitmaps[i];
+            IntStream.range(0, bitmap.length).parallel().forEach(j -> result[j] = result[j] & bitmap[j]);
+//            for (int j = 0; j < bitmap.length; j++)
+//                result[j] = result[j] & bitmap[j];
+        }
+        return result;
     }
 
+    public long[] filter2(int[] index) throws Exception {
+        if (index.length == 0) {
+            long[] result = new long[this.bitmaps[0].length];
+            Arrays.fill(result, allBitsOne);
+            return result;
+        }
+        long[] result = bitmaps[index[0]];
+        for (int i = 1; i < index.length; i++) {
+             long[] bitmap = bitmaps[i];
+             for (int j = 0; j < bitmap.length; j++)
+                 result[j] = result[j] & bitmap[j];
+        }
+        return result;
+    }
+
+    private long[] and(long[] a, long[] b) {
+        int length = Math.min(a.length, b.length);
+        long[] c = new long[length];
+        for (int i = 0; i < length; i++)
+            c[i]= a[i] & b[i];
+        return c;
+    }
 
     public static BITwithBytes fromCSV(String path) throws Exception {
         File csv = new File(path);
@@ -47,8 +90,8 @@ public class BITwithBytes {
         int length = Integer.parseInt(header[0]);
         int weight = Integer.parseInt(header[1]);
 
-        BITwithBytes bit = new BITwithBytes(weight, length);
-        bit.indexId = new long[length];
+        BITwithBytes bit = new BITwithBytes();
+        bit.ids = new long[length];
         bit.codes = new byte[length][];
 
         String line = "";
@@ -64,35 +107,36 @@ public class BITwithBytes {
             String codeStr = split.length==1?"":split[1];
             byte[] code = Base64.getDecoder().decode(codeStr);
 
-            bit.indexId[i] = id;
+            bit.ids[i] = id;
             bit.codes[i] = code;
-            bit.idIndex.put(id, i);
-            bit.codeId.put(codeStr, id);
+            bit.id2Index.put(id, i);
+            bit.code2Id.put(codeStr, id);
 
             BitSet vector =  BitSet.valueOf(code);
             int finalI = i;
             vector.stream().mapToObj(bitmaps::get).forEach(bitSet -> bitSet.set(finalI));
             i++;
         }
+        bit.bitmaps = new long[weight][];
         for (i = 0; i < weight; i++) {
-            bit.indexs[i] = bitmaps.get(i).toLongArray();
+            bit.bitmaps[i] = bitmaps.get(i).toLongArray();
         }
         return bit;
     }
 
     public void toCSV(String path) throws Exception {
-        String[][] csv = new String[this.indexId.length][2];
-        for (int i = 0; i < this.indexId.length; i++) {
-            csv[i][0] = this.indexId[i] + "";
+        String[][] csv = new String[this.ids.length][2];
+        for (int i = 0; i < this.ids.length; i++) {
+            csv[i][0] = this.ids[i] + "";
             csv[i][1] = Base64.getEncoder().encodeToString(this.codes[i]);
         }
         IO.toCSV(path, new String[]{getNodeSize()+"", getVectorSize()+""}, csv);
 
-        String[][] bitmap = new String[this.indexs.length][];
-        for (int i = 0; i < this.indexs.length; i++) {
-            bitmap[i] = Arrays.stream(indexs[i]).mapToObj(String::valueOf).toArray(String[]::new);
+        String[][] bitmap = new String[this.bitmaps.length][];
+        for (int i = 0; i < this.bitmaps.length; i++) {
+            bitmap[i] = Arrays.stream(bitmaps[i]).mapToObj(String::valueOf).toArray(String[]::new);
         }
-        IO.toCSV(path+"bitmap", new String[]{}, bitmap);
+        IO.toCSV(path+"bitmap", new String[]{getNodeSize()+"", getVectorSize()+""}, bitmap);
     }
 
     public static BITwithBytes createIndex(List<long[]> data, long rootId) throws Exception {
@@ -105,8 +149,8 @@ public class BITwithBytes {
         TreeNode[] nodes = tree.values().toArray(new TreeNode[0]); // TODO
 
         int length = nodes.length;
-        BITwithBytes bit = new BITwithBytes(weight, length);
-        bit.indexId = new long[length];
+        BITwithBytes bit = new BITwithBytes();
+        bit.ids = new long[length];
         bit.codes = new byte[length][];
 
         ArrayList<BitSet> bitmaps = new ArrayList<>(weight);
@@ -116,26 +160,26 @@ public class BITwithBytes {
 
         for (int i = 0; i < nodes.length; i++) {
             TreeNode node = nodes[i];
-            bit.indexId[i] = node.getId();
+            bit.ids[i] = node.getId();
             bit.codes[i] = node.getCode();
-            bit.idIndex.put(node.getId(), i);
-            bit.codeId.put(Base64.getEncoder().encodeToString(node.getCode()), node.getId());
+            bit.id2Index.put(node.getId(), i);
+            bit.code2Id.put(Base64.getEncoder().encodeToString(node.getCode()), node.getId());
 
             BitSet vector =  BitSet.valueOf(node.getCode());
             int finalI = i;
             vector.stream().mapToObj(bitmaps::get).forEach(bitSet -> bitSet.set(finalI));
         }
-        bit.root = rootId;
+        bit.bitmaps = new long[weight][];
         for (int i = 0; i < weight; i++) {
-            bit.indexs[i] = bitmaps.get(i).toLongArray();
+            bit.bitmaps[i] = bitmaps.get(i).toLongArray();
         }
         return bit;
     }
 
     public long getIdByCode(byte[] v) throws Exception {
         String key = Base64.getEncoder().encodeToString(v);
-        if (codeId.containsKey(key)){
-            return this.codeId.get(key);
+        if (code2Id.containsKey(key)){
+            return this.code2Id.get(key);
         } else {
             throw new Exception("can not find vector: " + Arrays.toString(v));
         }
@@ -143,9 +187,9 @@ public class BITwithBytes {
 
     public byte[] getCodeById(long id) throws Exception {
 //        if (!this.idIndex.containsKey(id)) throw new Exception("can not find code of " + id);
-        if (this.idIndex.get(id) == null)
+        if (this.id2Index.get(id) == null)
             return null;
-        int index= this.idIndex.get(id);
+        int index= this.id2Index.get(id);
 
         return this.codes[index];
     }
@@ -162,34 +206,62 @@ public class BITwithBytes {
         byte[] prefix = EncodingAlgorithm.commonPrefix(vs);
         BitSet bitSet = BitSet.valueOf(prefix);
         String key = Base64.getEncoder().encodeToString(prefix);
-        while (!this.codeId.containsKey(key) && prefix.length!=0){ //remove a gene
+        while (!this.code2Id.containsKey(key) && prefix.length!=0){ //remove a gene
             bitSet.clear(bitSet.length()-1);
             prefix = bitSet.toByteArray();
             key = Base64.getEncoder().encodeToString(prefix);
         }
-        return this.codeId.get(key);
+        return this.code2Id.get(key);
     }
 
-    public long[] geneFilter(BitSet genes) throws Exception {
-        return BitSet.valueOf(filter(genes)).stream().mapToLong(i -> this.indexId[i]).toArray();
+    public long[] geneFilter(byte[] genes) throws Exception {
+        int[] vector = BitSet.valueOf(genes).stream().toArray();
+        return BitSet.valueOf(filter(vector)).stream().parallel().mapToLong(i -> this.ids[i]).toArray();
     }
 
-    public long[] geneFilter2(BitSet genes) throws Exception {
-        return genes.stream().mapToObj(i -> BitSet.valueOf(indexs[i])).reduce(
-                (a,b)-> {a.and(b);
-                return a;}).get().stream().mapToLong(i -> this.indexId[i]).toArray();
+    public long[] geneFilter2(byte[] genes) throws Exception {
+        int[] vector = BitSet.valueOf(genes).stream().toArray();
+        return BitSet.valueOf(filter2(vector)).stream().parallel().mapToLong(i -> this.ids[i]).toArray();
     }
 
-    public int getVectorSize(){ return this.indexs.length;}
+    public int getVectorSize(){ return this.bitmaps.length;}
 
-    public int getNodeSize(){ return this.indexId.length;}
+    public int getNodeSize(){ return this.ids.length;}
 
-    public String printSize(){
-        return String.format("indexs: %s, codeId: %s, codes:%s, idIndex:%s, indexId:%s, all: %s",
-                RamUsageEstimator.sizeOf(indexs),
-                RamUsageEstimator.sizeOf(codeId),
-                RamUsageEstimator.sizeOf(codes),
-                RamUsageEstimator.sizeOf(idIndex),
-                RamUsageEstimator.sizeOf(indexId), RamUsageEstimator.sizeOf(this));
+    public void serialize(String path) throws Exception {
+        Kryo kryo = BITwithBytes.kryo;
+        write(path+"bitmaps.bin", this.bitmaps, kryo);
+        write(path+"ids.bin", this.ids, kryo);
+        write(path+"codes.bin", this.codes, kryo);
+        write(path+"code2Id.bin", this.code2Id, kryo);
+        write(path+"id2Index.bin", this.id2Index, kryo);
+    }
+
+    public static BITwithBytes deserialize(String path) throws Exception {
+        Kryo kryo = BITwithBytes.kryo;
+        return new BITwithBytes(
+                read(path+"bitmaps.bin", long[][].class, kryo),
+                read(path+"code2Id.bin", HashMap.class, kryo),
+                read(path+"codes.bin", byte[][].class, kryo),
+                read(path+"id2Index.bin", HashMap.class, kryo),
+                read(path+"ids.bin", long[].class, kryo)
+        );
+    }
+
+    private void write(String path, Object object, Kryo kryo) throws Exception {
+        FileOutputStream fos = new FileOutputStream(new File(path));
+        Output output = new Output(fos);
+        kryo.writeObject(output, object);
+        output.close();
+        fos.close();
+    }
+
+    public static  <T> T read(String path, Class<T> type, Kryo kryo) throws Exception {
+        FileInputStream fis = new FileInputStream(new File(path));
+        Input input = new Input(fis);
+        T result = kryo.readObject(input, type);
+        input.close();
+        fis.close();
+        return result;
     }
 }
