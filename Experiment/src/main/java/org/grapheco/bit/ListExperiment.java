@@ -7,9 +7,10 @@ public class ListExperiment {
     }
 
     static void list() throws Exception {
-        String path = System.getProperty("user.dir") + "/dataset/out/";
+        String path = System.getProperty("user.dir") + "/dataset/generated-out/3/";
+//        String path = System.getProperty("user.dir") + "/dataset/out/";
         BIT bit = BIT.deserialize(path);
-
+        System.out.println("Loaded.");
         long[][] test = IO.read(DataSet.list4).stream().map(line -> {
             return new long[]{
                     Long.parseLong(line[0]),
@@ -31,9 +32,10 @@ public class ListExperiment {
     }
 
     static void listParallel() throws Exception {
-        String path = System.getProperty("user.dir") + "/dataset/out/";
+        String path = System.getProperty("user.dir") + "/dataset/generated-out/3/";
+//        String path = System.getProperty("user.dir") + "/dataset/out/";
         BIT bit = BIT.deserialize(path);
-
+        System.out.println("Loaded.");
         long[][] test = IO.read(DataSet.list4).stream().map(line -> {
             return new long[]{
                     Long.parseLong(line[0]),

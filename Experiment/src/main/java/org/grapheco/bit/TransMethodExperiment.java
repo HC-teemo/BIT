@@ -5,11 +5,11 @@ import java.util.ArrayList;
 public class TransMethodExperiment {
 
     public static void main(String[] args) throws Exception {
-        list(DataSet.list4);
+        list(DataSet.list3);
     }
 
     static void list(File dataset) throws Exception {
-        TransMethod transMethod = TransMethod.createIndex(IO.loadData(DataSet.NCBI), 1L);
+        TransMethod transMethod = TransMethod.createIndex(IO.loadData(DataSet.datasetDir+"/generated/size3.csv"), 1L);
 
         long[][] test = IO.read(dataset).stream().map(line -> {
             return new long[]{
@@ -18,13 +18,13 @@ public class TransMethodExperiment {
             };
         }).toArray(long[][] :: new);
 
-        int TIMEs = 10;
+        int TIMEs = 1;
         int ALLTIME = 0;
         for (int i = 0; i < TIMEs; i++) {
             long t0 = System.nanoTime();
             for (long[] t : test) {
                 int size = transMethod.list(t[0]).size();
-//                System.out.println(size);
+                System.out.println(size);
             }
             double milliseconds = (System.nanoTime() - t0) / 1e6;
             ALLTIME+= (int) milliseconds;
