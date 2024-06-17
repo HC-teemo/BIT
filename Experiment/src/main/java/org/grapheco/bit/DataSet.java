@@ -5,8 +5,8 @@ import java.util.HashMap;
 
 public class DataSet {
     private static final String rootDir = System.getProperty("user.dir");
-    private static final String datasetDir = rootDir + "/dataset";
-    private static final String experimentDir = datasetDir + "/experiment";
+    public static final String datasetDir = rootDir + "/dataset";
+    public static final String experimentDir = datasetDir + "/experiment";
 
     public static final String NCBI = datasetDir + "/ncbi/NCBI414.csv";
     public static final String NCBI414_h3 = datasetDir + "/ncbi/h3.csv";

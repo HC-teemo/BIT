@@ -5,7 +5,7 @@ import java.util.ArrayList;
 public class TransMethodExperiment {
 
     public static void main(String[] args) throws Exception {
-        list(DataSet.list3);
+        list(DataSet.list4);
     }
 
     static void list(File dataset) throws Exception {

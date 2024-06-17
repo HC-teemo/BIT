@@ -7,20 +7,36 @@ import java.util.*;
 
 public class TreeGenerator {
     private static final Random random = new Random();
-    private static long nodeId = 1; // 节点ID起始值
+
 
     public static void main(String[] args) {
-        int depth = 30; // 指定树的深度
-        int maxNumber = 5000000;
-        int minChildren = 3; // 每个节点最少孩子数量
-        int maxChildren = 5; // 每个节点最多孩子数量
+        int maxDepth = 100; // 指定树的深度
+        int m = 1000000;
+        int[] maxNumbers = new int[]{
+                (int) (0.01*m),
+                (int) (0.03*m),
+                (int) (0.1*m),
+                (int) (0.3*m),
+                m,
+                3*m,
+                10*m,
+                30*m,
+                100*m};
+        int minChildren = 1; // 每个节点最少孩子数量
+        int maxChildren = 3; // 每个节点最多孩子数量
 
-        TreeNode root = generateTree(depth, minChildren, maxChildren, maxNumber);
-        saveTreeToCsv(root, "/Users/huchuan/Documents/GitHub/BIT/dataset/generated/");
+        String dir = DataSet.datasetDir+"/generated/";
+        for (int maxNumber : maxNumbers){
+            long start = System.currentTimeMillis();
+            TreeNode root = generateTree(maxDepth, minChildren, maxChildren, maxNumber);
+            saveTreeToCsv(root, dir);
+            System.out.println(System.currentTimeMillis()-start);
+        }
     }
 
     // 非递归生成树的方法
     public static TreeNode generateTree(int maxDepth, int minChildren, int maxChildren, int maxNumber) {
+        long nodeId = 1; // 节点ID起始值
         TreeNode root = new TreeNode(null, nodeId++); // 创建根节点
         Queue<TreeNode> queue = new LinkedList<>();
         Queue<Integer> depthQueue = new LinkedList<>();
@@ -60,7 +76,7 @@ public class TreeGenerator {
                 queue.add(child);
             }
         }
-        File file = new File(filePath+"size"+(csvData.size()+1)+".csv");
+        File file = new File(filePath+"size"+((csvData.size()+1)/1e6)+".csv");
         file.getParentFile().mkdirs(); // 确保所有必要的目录都已创建
         try (FileWriter writer = new FileWriter(file)) {
             for (String[] line : csvData) {

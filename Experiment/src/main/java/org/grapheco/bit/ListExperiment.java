@@ -1,8 +1,5 @@
 package org.grapheco.bit;
 
-import java.io.File;
-import java.util.BitSet;
-
 public class ListExperiment {
     public static void main(String[] args) throws Exception {
         list();
@@ -11,7 +8,7 @@ public class ListExperiment {
 
     static void list() throws Exception {
         String path = System.getProperty("user.dir") + "/dataset/out/";
-        BITwithBytes bit = BITwithBytes.deserialize(path);
+        BIT bit = BIT.deserialize(path);
 
         long[][] test = IO.read(DataSet.list4).stream().map(line -> {
             return new long[]{
@@ -35,7 +32,7 @@ public class ListExperiment {
 
     static void listParallel() throws Exception {
         String path = System.getProperty("user.dir") + "/dataset/out/";
-        BITwithBytes bit = BITwithBytes.deserialize(path);
+        BIT bit = BIT.deserialize(path);
 
         long[][] test = IO.read(DataSet.list4).stream().map(line -> {
             return new long[]{
